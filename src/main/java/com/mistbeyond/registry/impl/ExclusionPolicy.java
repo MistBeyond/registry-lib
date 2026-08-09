@@ -8,6 +8,7 @@ import java.util.List;
  *
  * @param packagePrefixes fully qualified package names; matching includes subpackages
  */
+@Deprecated
 record ExclusionPolicy(List<String> packagePrefixes) {
 
     /**

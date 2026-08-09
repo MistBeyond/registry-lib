@@ -20,6 +20,7 @@ import java.util.stream.Stream;
  * {@link java.lang.annotation.ElementType#PACKAGE} member, a package-level annotation is scanned
  * as the member {@code <package>.package-info} and must be expanded to the package's classes.
  */
+@Deprecated
 class SideSifter {
     private static final String PACKAGE_INFO_SUFFIX = ".package-info";
 

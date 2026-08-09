@@ -10,6 +10,7 @@ import java.lang.annotation.Annotation;
  * Validates that every class annotated with a {@link RegisterBlockEntityType} annotation exposes exactly
  * one static {@link ProvideFactory} method with no parameters that returns the expected factory type.
  */
+@Deprecated
 public abstract class FactoryProviderChecker extends RegistrationChecker {
     private final Class<?> factoryType;
 

@@ -21,18 +21,11 @@ class ScanDataHelper {
     }
 
     /**
-     * Resolves the annotated member as a loaded class and validates that it is a subtype of {@code superclass}.
-     *
-     * @param superclass the required superclass
-     * @return the resolved class
-     * @throws IllegalArgumentException when the annotated member is not a {@code superclass}
+     * Resolves the annotated member as a loaded class.
+     * <p>
+     * The subtype contract is validated by {@code RegistryProcessor} at compile time.
      */
-    @SuppressWarnings("unchecked")
-    public static <T> Class<? extends T> resolveAndValidate(ModFileScanData.AnnotationData data, Class<T> superclass) {
-        Class<?> clazz = ReflectHelper.loadClasses(List.of(data.memberName())).getFirst();
-        if (!superclass.isAssignableFrom(clazz)) {
-            throw new IllegalArgumentException(String.format("Class %s is not a %s", data.memberName(), superclass.getName()));
-        }
-        return (Class<? extends T>) clazz;
+    public static Class<?> resolve(ModFileScanData.AnnotationData data) {
+        return ReflectHelper.loadClasses(List.of(data.memberName())).getFirst();
     }
 }

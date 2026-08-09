@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 /**
  * Static helpers shared by the registration checkers.
  */
+@Deprecated
 public final class Checks {
     private Checks() {
     }

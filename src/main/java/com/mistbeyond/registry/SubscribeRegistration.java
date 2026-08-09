@@ -13,6 +13,7 @@ import java.lang.annotation.Target;
 /**
  * The annotated method must be static, and its only parameter must be a registration receiver,
  * such as {@link BlockRegistration}, {@link ItemRegistration}, {@link MenuTypeRegistration} or {@link ContainerScreenRegistration}.
+ * <p>Contract validation is performed at compile time by {@code RegistryProcessor}.
  * <p>
  * Then, you can register objects, like blocks:
  * <pre>{@code
@@ -26,7 +27,7 @@ import java.lang.annotation.Target;
  *     registration.register("your_block_name", YourBlock::new, p -> p.strength(1.0f));
  * }}</pre>
  * <p>
- * Registering subclass instance in the superclass registration is not recommended, even though there are no checks.
+ * Registering a subclass instance from the superclass registration is not recommended; this cannot be validated at compile time.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

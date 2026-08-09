@@ -9,11 +9,13 @@ change: new packages, moving or extracting classes, or changing dependency direc
 |----------------------------|--------------------------------------------------------------------------|
 | `com.mistbeyond.registry`  | Public registration contracts and annotations                             |
 | `com.mistbeyond.registry.impl` | Implementations and internal helpers; consumers should not reach into it |
+| `com.mistbeyond.registry.impl.processor` | Compile-time annotation processor (`RegistryProcessor`)                  |
 
 ## Rules
 
 - Public APIs stay in `com.mistbeyond.registry`; implementations go in `com.mistbeyond.registry.impl`.
-- `impl` classes that are used by external early-check tooling (`Checks`, `CheckReport`, `ClassContainer`) remain
-  public, but the rest of the implementation is internal.
-- The library must not depend on any consuming mod's packages. Mod-specific scan exclusions are supplied by the
-  consumer through `CommonRegistrar.of(..., excludedPackagePrefixes)`.
+- Legacy runtime check helpers (`Checks`, `ClassContainer`, and the checker classes) remain public for compatibility
+  but are deprecated; `CheckReport` is still used by the remaining family-consistency checks. New contract validation
+  is performed by `RegistryProcessor` at compile time.
+- The library must not depend on any consuming mod's packages. The deprecated
+  `CommonRegistrar.of(..., excludedPackagePrefixes)` overload is kept for binary compatibility but is ignored.

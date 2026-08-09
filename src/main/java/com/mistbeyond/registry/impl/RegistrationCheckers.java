@@ -5,6 +5,7 @@ import java.util.List;
 /**
  * Central registry of which {@link Checker checkers} apply to which distribution side.
  */
+@Deprecated
 public final class RegistrationCheckers {
     private RegistrationCheckers() {
     }

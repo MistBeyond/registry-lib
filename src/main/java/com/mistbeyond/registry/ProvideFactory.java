@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * The annotated static method must have no parameters, and return a type that implements the factory.
+ * <p>Contract validation is performed at compile time by {@code RegistryProcessor}.
  * <p>
  * You can provide the factory like this:
  * <pre>{@code
@@ -16,7 +17,7 @@ import java.lang.annotation.Target;
  * }
  * }</pre>
  * <p>
- * Providing the subclass factory in the superclass is not recommended, even though there are no runtime checks.
+ * Providing the subclass factory in the superclass is not recommended; this cannot be validated at compile time.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)

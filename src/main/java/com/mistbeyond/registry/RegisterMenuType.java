@@ -9,6 +9,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a menu class for auto-registration in the mod's registry system.
+ * <p>Contract validation is performed at compile time by {@code RegistryProcessor}.
  * The annotated class must contain exactly one static method, and strictly requires extending {@link net.minecraft.world.inventory.AbstractContainerMenu AbstractContainerMenu}.
  * The static method must be annotated with {@link SubscribeRegistration}, and its only parameter must be {@link MenuTypeRegistration}
  * <p>
@@ -22,7 +23,7 @@ import java.lang.annotation.Target;
  *     registration.register("your_menu_name", p -> new YourMenu(p, otherParam));
  * }}</pre>
  * <p>
- * Registering subclass instance in the superclass registration is not recommended, even though there are no checks.
+ * Registering a subclass instance from the superclass registration is not recommended; this cannot be validated at compile time.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

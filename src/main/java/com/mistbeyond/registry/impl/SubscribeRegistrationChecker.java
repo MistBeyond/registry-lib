@@ -11,6 +11,7 @@ import java.lang.annotation.Annotation;
  * {@link RegisterMenuType} or {@link RegisterContainerScreen} annotation exposes exactly one static
  * {@link SubscribeRegistration} method accepting the expected registration receiver.
  */
+@Deprecated
 public abstract class SubscribeRegistrationChecker extends RegistrationChecker {
     private final Class<?> registrationClass;
 

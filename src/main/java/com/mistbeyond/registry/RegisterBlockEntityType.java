@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * Marks a block entity class for auto-registration in the mod's registry system.
+ * <p>Contract validation is performed at compile time by {@code RegistryProcessor}.
  * The annotated class must contain exactly one static method, and strictly requires extending {@link net.minecraft.world.level.block.entity.BlockEntity BlockEntity}.
  * The static method must be annotated with {@link ProvideFactory}, have no parameters, and return a type that implements the {@link net.minecraft.world.level.block.entity.BlockEntityType.BlockEntitySupplier factory}.
  * <p>
@@ -18,7 +19,7 @@ import java.lang.annotation.Target;
  * }
  * }</pre>
  * <p>
- * Providing the subclass factory in the superclass is not recommended, even though there are no runtime checks.
+ * Providing the subclass factory in the superclass is not recommended; this cannot be validated at compile time.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

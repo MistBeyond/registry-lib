@@ -8,6 +8,7 @@ import java.lang.annotation.Annotation;
  * For each annotated class the inheritance requirement and the subclass-specific validation are
  * evaluated; concrete failures are grouped under a per-class summary.
  */
+@Deprecated
 public abstract class RegistrationChecker implements Checker {
     private final ClassContainer classContainer;
     private final Class<? extends Annotation> annotation;

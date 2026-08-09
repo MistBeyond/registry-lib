@@ -80,6 +80,10 @@ public abstract class CommonRegistrar {
         return of(modId, blockRegister, itemRegister, blockEntityRegister, menuRegister, List.of());
     }
 
+    /**
+     * @deprecated Compile-time validation is performed by {@code RegistryProcessor}; exclusion prefixes are ignored.
+     */
+    @Deprecated
     public static CommonRegistrar of(String modId, DeferredRegister.Blocks blockRegister, DeferredRegister.Items itemRegister, DeferredRegister<BlockEntityType<?>> blockEntityRegister, DeferredRegister<MenuType<?>> menuRegister, List<String> excludedPackagePrefixes) {
         return new CommonRegistryTable(modId, blockRegister, itemRegister, blockEntityRegister, menuRegister, excludedPackagePrefixes);
     }

@@ -1,18 +1,10 @@
 package com.mistbeyond.registry.impl;
 
-import com.google.common.base.Stopwatch;
 import com.mistbeyond.registry.*;
 import lombok.extern.slf4j.Slf4j;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.Util;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -29,14 +21,23 @@ public class CommonRegistryTable extends CommonRegistrar {
     private final ItemRegistration itemRegistration;
     private final MenuTypeRegistration menuTypeRegistration;
     private final ContainerScreenRegistration containerScreenRegistration;
-    private final ExclusionPolicy exclusionPolicy;
 
     private boolean insensitiveProcessed = false;
     private boolean clientProcessed = false;
 
-    public CommonRegistryTable(String modId, DeferredRegister.Blocks blockRegister, DeferredRegister.Items itemRegister, DeferredRegister<BlockEntityType<?>> blockEntityRegister, DeferredRegister<MenuType<?>> menuRegister, List<String> excludedPackagePrefixes) {
+    /**
+     * @param excludedPackagePrefixes retained for API compatibility; compile-time validation no longer needs it
+     */
+    @SuppressWarnings("unused")
+    public CommonRegistryTable(
+            String modId,
+            DeferredRegister.Blocks blockRegister,
+            DeferredRegister.Items itemRegister,
+            DeferredRegister<BlockEntityType<?>> blockEntityRegister,
+            DeferredRegister<MenuType<?>> menuRegister,
+            List<String> excludedPackagePrefixes
+    ) {
         super(modId, blockRegister, itemRegister, blockEntityRegister, menuRegister);
-        exclusionPolicy = new ExclusionPolicy(excludedPackagePrefixes);
         blockRegistration = new BlockRegistration(modId, block, blockRegister);
         itemRegistration = new ItemRegistration(modId, item, itemRegister);
         menuTypeRegistration = new MenuTypeRegistration(modId, menuType, menuRegister);
@@ -62,9 +63,9 @@ public class CommonRegistryTable extends CommonRegistrar {
      * Resolves every class annotated with {@code annotation} and invokes its unique
      * {@link SubscribeRegistration} static method with {@code receiver}.
      */
-    private static <T, R> void invokeRegistration(ModFileScanData scanResult, Class<? extends Annotation> annotation, Class<T> superclass, R receiver) {
+    private static <R> void invokeRegistration(ModFileScanData scanResult, Class<? extends Annotation> annotation, R receiver) {
         for (var data : ScanDataHelper.annotationDataOf(scanResult, annotation)) {
-            invokeSubscribeRegistration(ScanDataHelper.resolveAndValidate(data, superclass), receiver);
+            invokeSubscribeRegistration(ScanDataHelper.resolve(data), receiver);
         }
     }
 
@@ -77,26 +78,6 @@ public class CommonRegistryTable extends CommonRegistrar {
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException(e);
         }
-    }
-
-    private static void checkClientOnly(ClassContainer container) {
-        log.info("Starting check for client-only classes");
-        Stopwatch stopwatch = Stopwatch.createStarted(Util.TICKER);
-        var report = new CheckReport();
-        Checks.checkClientOnlyRegistration(container, report);
-        var duration = stopwatch.stop().elapsed();
-        log.info("Finished check for client-only classes, took {}.{}s", duration.toSeconds(), String.format("%03d", duration.toMillisPart()));
-        report.throwIfFailed(log);
-    }
-
-    private static void checkInsensitive(ClassContainer container) {
-        log.info("Starting check for side-insensitive classes");
-        Stopwatch stopwatch = Stopwatch.createStarted(Util.TICKER);
-        var report = new CheckReport();
-        Checks.checkSideInsensitiveRegistration(container, report);
-        var duration = stopwatch.stop().elapsed();
-        log.info("Finished check for side-insensitive classes, took {}.{}s", duration.toSeconds(), String.format("%03d", duration.toMillisPart()));
-        report.throwIfFailed(log);
     }
 
     public void registerCommon(IEventBus modEventBus, ModContainer modContainer) {
@@ -118,8 +99,6 @@ public class CommonRegistryTable extends CommonRegistrar {
                     .getOwningFile()
                     .getFile()
                     .getScanResult();
-            // check
-            checkClientOnly(new ClassContainer(SideSifter.loadSensitive(scanResult, Dist.CLIENT, exclusionPolicy)));
             processContainerScreen(scanResult);
             validateClientFamilyConsistency();
             clientProcessed = true;
@@ -132,9 +111,6 @@ public class CommonRegistryTable extends CommonRegistrar {
                     .getOwningFile()
                     .getFile()
                     .getScanResult();
-            // check
-            checkInsensitive(new ClassContainer(SideSifter.loadInsensitive(scanResult, exclusionPolicy)));
-            // no checks during processing
             processBlock(scanResult);
             processItem(scanResult);
             processMenu(scanResult);
@@ -146,7 +122,7 @@ public class CommonRegistryTable extends CommonRegistrar {
 
     private void processBlock(ModFileScanData scanResult) {
         for (var data : ScanDataHelper.annotationDataOf(scanResult, RegisterBlock.class)) {
-            var clazz = ScanDataHelper.resolveAndValidate(data, Block.class);
+            var clazz = ScanDataHelper.resolve(data);
             var v = data.annotationData().get("registerBlockItem");
             blockRegistration.setAllowRegisteringBlockItem(v == null || (boolean) v);
             invokeSubscribeRegistration(clazz, blockRegistration);
@@ -155,16 +131,16 @@ public class CommonRegistryTable extends CommonRegistrar {
     }
 
     private void processItem(ModFileScanData scanResult) {
-        invokeRegistration(scanResult, RegisterItem.class, Item.class, itemRegistration);
+        invokeRegistration(scanResult, RegisterItem.class, itemRegistration);
     }
 
     private void processMenu(ModFileScanData scanResult) {
-        invokeRegistration(scanResult, RegisterMenuType.class, AbstractContainerMenu.class, menuTypeRegistration);
+        invokeRegistration(scanResult, RegisterMenuType.class, menuTypeRegistration);
     }
 
     private void processBlockEntity(ModFileScanData scanResult) {
         for (var data : ScanDataHelper.annotationDataOf(scanResult, RegisterBlockEntityType.class)) {
-            var clazz = ScanDataHelper.resolveAndValidate(data, BlockEntity.class);
+            var clazz = ScanDataHelper.resolve(data);
             var name = (String) data.annotationData().get("value");
             var id = Identifier.fromNamespaceAndPath(this.modId, name);
             if (this.blockEntityType.containsKey(id)) {
@@ -175,7 +151,7 @@ public class CommonRegistryTable extends CommonRegistrar {
     }
 
     private void processContainerScreen(ModFileScanData scanResult) {
-        invokeRegistration(scanResult, RegisterContainerScreen.class, AbstractContainerScreen.class, containerScreenRegistration);
+        invokeRegistration(scanResult, RegisterContainerScreen.class, containerScreenRegistration);
     }
 
     /**
