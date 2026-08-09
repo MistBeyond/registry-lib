@@ -63,12 +63,14 @@ jobs:
           cd build/central-bundle
           zip -qr ../central-portal-bundle.zip .
           cd ../..
-          response="$(curl -sS -u "${MAVEN_CENTRAL_USERNAME}:${MAVEN_CENTRAL_PASSWORD}" \
+          auth_token="$(printf '%s:%s' "${MAVEN_CENTRAL_USERNAME}" "${MAVEN_CENTRAL_PASSWORD}" | base64 -w0)"
+          response="$(curl -sS \
+            -H "Authorization: Bearer ${auth_token}" \
             -X POST \
             -F "bundle=@build/central-portal-bundle.zip" \
-            https://central.sonatype.com/api/v1/publisher/upload)"
-          deployment_id="$(printf '%s' "$response" | jq -r '.deploymentId // .deployment_id // .id // empty')"
-          if [ -z "${deployment_id}" ]; then
+            "https://central.sonatype.com/api/v1/publisher/upload?publishingType=USER_MANAGED")"
+          deployment_id="$(printf '%s' "${response}" | tr -d '[:space:]')"
+          if ! [[ "${deployment_id}" =~ ^[0-9a-fA-F-]{36}$ ]]; then
             echo "::error::Central Portal upload failed: ${response}"
             exit 1
           fi
@@ -80,9 +82,11 @@ jobs:
           MAVEN_CENTRAL_USERNAME: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: |
-          curl -sS -u "${MAVEN_CENTRAL_USERNAME}:${MAVEN_CENTRAL_PASSWORD}" \
+          auth_token="$(printf '%s:%s' "${MAVEN_CENTRAL_USERNAME}" "${MAVEN_CENTRAL_PASSWORD}" | base64 -w0)"
+          curl -sS \
+            -H "Authorization: Bearer ${auth_token}" \
             -X POST \
-            "https://central.sonatype.com/api/v1/publisher/deployment/${{ steps.upload.outputs.deployment_id }}/publish"
+            "https://central.sonatype.com/api/v1/publisher/deployment/${{ steps.upload.outputs.deployment_id }}"
 
       - name: Wait for deployment to be published
         env:
@@ -90,14 +94,17 @@ jobs:
           MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
         run: |
           deployment_id="${{ steps.upload.outputs.deployment_id }}"
+          auth_token="$(printf '%s:%s' "${MAVEN_CENTRAL_USERNAME}" "${MAVEN_CENTRAL_PASSWORD}" | base64 -w0)"
           for attempt in $(seq 1 60); do
-            status="$(curl -sS -u "${MAVEN_CENTRAL_USERNAME}:${MAVEN_CENTRAL_PASSWORD}" \
-              "https://central.sonatype.com/api/v1/publisher/deployment/${deployment_id}/status")"
-            state="$(printf '%s' "$status" | jq -r '.deploymentState // .state // .status // empty')"
+            status="$(curl -sS \
+              -H "Authorization: Bearer ${auth_token}" \
+              -X POST \
+              "https://central.sonatype.com/api/v1/publisher/status?id=${deployment_id}")"
+            state="$(printf '%s' "${status}" | jq -r '.deploymentState // empty')"
             echo "Deployment state: ${state}"
             case "${state}" in
               PUBLISHED) exit 0 ;;
-              VALIDATION_FAILED|FAILED|ERROR)
+              FAILED)
                 echo "::error::Central Portal deployment failed: ${status}"
                 exit 1
                 ;;
